@@ -61,7 +61,7 @@ theorem Contiguous1.contiguous2 {α : Type*} {Ω : α → Type*}
     filter_upwards [hB 1 one_pos] with a ha1
     have hcfin : c a < ∞ := lt_of_le_of_lt (sInf_le ⟨one_pos, ha1⟩) ENNReal.one_lt_top
     refine le_measure_le_of_lt_thresholds (Q a : Measure (Ω a)) _ (η : ℝ≥0∞) (c a)
-      (Measure.measurable_rnDeriv _ _) hcfin fun n => ?_
+      (Measure.measurable_rnDeriv _ _) fun n => ?_
     have hlt : c a < c a + 1 / (n + 1 : ℝ≥0∞) :=
       ENNReal.lt_add_right hcfin.ne (by simp)
     obtain ⟨ε, ⟨-, hεη⟩, hεlt⟩ := sInf_lt_iff.1 hlt
