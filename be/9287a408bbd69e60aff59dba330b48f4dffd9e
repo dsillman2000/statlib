@@ -1,0 +1,28 @@
+AGENTS.md
+  h_4cc74772b10fd4 1-28
+Statlib.lean
+  h_4cc74772b10fd4 3-6
+Statlib/Contiguity/LeCamFirstLemma.lean
+  h_4cc74772b10fd4 1-113
+Statlib/Contiguity/LikelihoodRatio.lean
+  h_4cc74772b10fd4 1-76
+Statlib/Contiguity/PortmanteauBound.lean
+  h_4cc74772b10fd4 1-138
+Statlib/Contiguity/QuantileThreshold.lean
+  h_4cc74772b10fd4 1-99
+docbuild/lean-toolchain
+  h_4cc74772b10fd4 1
+tutorial-manual/lean-toolchain
+  h_4cc74772b10fd4 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "be9287a408bbd69e60aff59dba330b48f4dffd9e",
+  "prompts": {},
+  "humans": {
+    "h_4cc74772b10fd4": {
+      "author": "dsillman2000 <dsillman2000@yahoo.com>"
+    }
+  }
+}
