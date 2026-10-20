@@ -1,0 +1,14 @@
+Statlib/Contiguity/PortmanteauBound.lean
+  h_4cc74772b10fd4 14-17,27-29,31-45,53-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eaa8965f5f1eff800f5d2659e16176f9e6eb6adf",
+  "prompts": {},
+  "humans": {
+    "h_4cc74772b10fd4": {
+      "author": "dsillman2000 <dsillman2000@yahoo.com>"
+    }
+  }
+}
