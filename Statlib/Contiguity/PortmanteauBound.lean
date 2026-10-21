@@ -26,33 +26,24 @@ namespace Statlib.Contiguity
 
 /-- Weak-limit lower bound on `μs a s` for an open set `s`: if `η < L s`, then eventually
 `η < μs a s`.  This is the open-set case of the portmanteau theorem. -/
-lemma eventually_gt_measure_open_of_tendsto {α : Type*} {h : Filter α}
-    (L : ProbabilityMeasure (ℝ≥0∞)) (μs : α → ProbabilityMeasure (ℝ≥0∞))
-    (hμs : Tendsto μs h (𝓝 L)) (η : ℝ≥0∞) (s : Set ℝ≥0∞) (hs : IsOpen s)
+lemma eventually_gt_measure_open_of_tendsto {X α : Type*} [MeasurableSpace X]
+    [TopologicalSpace X] [OpensMeasurableSpace X] [HasOuterApproxClosed X] {h : Filter α}
+    (L : ProbabilityMeasure X) (μs : α → ProbabilityMeasure X)
+    (hμs : Tendsto μs h (𝓝 L)) (η : ℝ≥0∞) (s : Set X) (hs : IsOpen s)
     (hη : η < L s) :
     ∀ᶠ a in h, η < μs a s := by
+  simp only [ennreal_coeFn_eq_coeFn_toMeasure] at hη ⊢
   -- Portmanteau, open sets: `L s ≤ liminf (μs a s)`.
-  have hlim : (L : Measure ℝ≥0∞) s ≤ h.liminf (fun a ↦ (μs a : Measure ℝ≥0∞) s) :=
-    ProbabilityMeasure.le_liminf_measure_open_of_tendsto hμs hs
-  have hη' : η < (L : Measure ℝ≥0∞) s := by
-    rw [← ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
-    exact hη
-  -- `η < liminf (μs a s)` forces `η < μs a s` eventually.
-  have hev : ∀ᶠ a in h, η < (μs a : Measure ℝ≥0∞) s :=
-    eventually_lt_of_lt_liminf (lt_of_lt_of_le hη' hlim)
-  filter_upwards [hev] with a ha
-  rw [← ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure] at ha
-  exact ha
+  exact eventually_lt_of_lt_liminf (hη.trans_le (le_liminf_measure_open_of_tendsto hμs hs))
 
 /-- Weak-limit lower bound on `μ (Iio ε)` for any threshold `ε > 0`. -/
 lemma eventually_gt_measure_Iio_of_tendsto {α : Type*} {h : Filter α}
     (L : ProbabilityMeasure (ℝ≥0∞)) (μs : α → ProbabilityMeasure (ℝ≥0∞))
     (hμs : Tendsto μs h (𝓝 L)) (η : ℝ≥0∞) (hη : η < L {0})
     (ε : ℝ≥0∞) (hε : 0 < ε) :
-    ∀ᶠ a in h, η < μs a (Iio ε) := by
+    ∀ᶠ a in h, η < μs a (Iio ε) :=
   -- `{0} ⊆ Iio ε`, hence `L {0} ≤ L (Iio ε)`.
-  have hL0 : L {0} ≤ L (Iio ε) := ProbabilityMeasure.apply_mono L (fun x hx => hx ▸ hε)
-  refine eventually_gt_measure_open_of_tendsto L μs hμs η (Iio ε) isOpen_Iio ?_
-  exact lt_of_lt_of_le hη (ENNReal.coe_le_coe.mpr hL0)
+  eventually_gt_measure_open_of_tendsto L μs hμs η (Iio ε) isOpen_Iio <|
+    hη.trans_le (ENNReal.coe_le_coe.mpr (L.apply_mono (singleton_subset_iff.2 hε)))
 
 end Statlib.Contiguity
