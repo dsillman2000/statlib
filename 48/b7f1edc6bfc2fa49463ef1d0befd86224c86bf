@@ -1,0 +1,16 @@
+docbuild/lean-toolchain
+  h_4cc74772b10fd4 1
+tutorial-manual/lean-toolchain
+  h_4cc74772b10fd4 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "48b7f1edc6bfc2fa49463ef1d0befd86224c86bf",
+  "prompts": {},
+  "humans": {
+    "h_4cc74772b10fd4": {
+      "author": "dsillman2000 <dsillman2000@yahoo.com>"
+    }
+  }
+}
