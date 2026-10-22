@@ -1,0 +1,17 @@
+Statlib/Contiguity/LeCamFirstLemma.lean
+  h_4cc74772b10fd4 2,4,152
+  h_4cc74772b10fd4 8-11,13,19-21,27,31-149,179
+Statlib/ForMathlib/ENNReal.lean
+  h_4cc74772b10fd4 107-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "09dff9da2b6b3f1daca2a135fcdd83dcf2168a32",
+  "prompts": {},
+  "humans": {
+    "h_4cc74772b10fd4": {
+      "author": "dsillman2000 <dsillman2000@yahoo.com>"
+    }
+  }
+}
