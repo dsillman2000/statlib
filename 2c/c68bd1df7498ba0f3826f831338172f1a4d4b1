@@ -1,0 +1,14 @@
+Statlib/Contiguity/LeCamFirstLemma.lean
+  h_4cc74772b10fd4 18,20-22,106-163,169-170,172,176-181,183-185,187,190-194,196-199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2cc68bd1df7498ba0f3826f831338172f1a4d4b1",
+  "prompts": {},
+  "humans": {
+    "h_4cc74772b10fd4": {
+      "author": "dsillman2000 <dsillman2000@yahoo.com>"
+    }
+  }
+}
