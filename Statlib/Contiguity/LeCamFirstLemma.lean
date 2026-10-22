@@ -15,10 +15,11 @@ public import Statlib.ForMathlib.ENNReal
 /-!
 # Le Cam's first lemma: `Contiguous1 → Contiguous2`
 
-Contrapositive proof assembled from the portmanteau, likelihood-ratio and quantile lemmas.
+Direct proof assembled from the portmanteau, likelihood-ratio and quantile lemmas:
 
-The supporting lemmas below are stated here because they are used only by this proof;
-`le_of_le_add_one_div` lives in `Statlib.ForMathlib.ENNReal`.
+* `Contiguous1.contiguous2`: the direct proof of van der Vaart, *Asymptotic Statistics*,
+  Lemma 6.4, (i) ⇒ (ii).
+(Direct proof only; the contrapositive variant was removed to keep a single proof.)
 -/
 
 @[expose] public section
@@ -55,7 +56,6 @@ lemma exists_neymanPearson_set_mul {Ω : Type*} [MeasurableSpace Ω]
   have ht : MeasurableSet t :=
     (measurableSet_le (μ.measurable_rnDeriv ν) measurable_const).inter hms.measurableSet_nullSet
   refine ⟨t, ht, ?_, measure_inter_conull hms.measure_compl_nullSet⟩
-  -- On `hms.nullSet` the singular part vanishes, so `μ t = ∫⁻ x in t, dμ/dν x ∂ν`.
   calc μ t = μ.singularPart ν t + ∫⁻ x in t, μ.rnDeriv ν x ∂ν := by
         conv_lhs => rw [μ.haveLebesgueDecomposition_add ν]
         rw [Measure.add_apply, withDensity_apply _ ht]
@@ -88,7 +88,6 @@ lemma eventually_gt_measure_open_of_tendsto {X α : Type*} [MeasurableSpace X]
     (hη : η < L s) :
     ∀ᶠ a in h, η < μs a s := by
   simp only [ennreal_coeFn_eq_coeFn_toMeasure] at hη ⊢
-  -- Portmanteau, open sets: `L s ≤ liminf (μs a s)`.
   exact eventually_lt_of_lt_liminf (hη.trans_le (le_liminf_measure_open_of_tendsto hμs hs))
 
 /-- Weak-limit lower bound on `μ (Iio ε)` for any threshold `ε > 0`. -/
@@ -97,7 +96,6 @@ lemma eventually_gt_measure_Iio_of_tendsto {α : Type*} {h : Filter α}
     (hμs : Tendsto μs h (𝓝 L)) (η : ℝ≥0∞) (hη : η < L {0})
     (ε : ℝ≥0∞) (hε : 0 < ε) :
     ∀ᶠ a in h, η < μs a (Iio ε) :=
-  -- `{0} ⊆ Iio ε`, hence `L {0} ≤ L (Iio ε)`.
   eventually_gt_measure_open_of_tendsto L μs hμs η (Iio ε) isOpen_Iio <|
     hη.trans_le (ENNReal.coe_le_coe.mpr (L.apply_mono (singleton_subset_iff.2 hε)))
 
@@ -105,97 +103,99 @@ lemma eventually_gt_measure_Iio_of_tendsto {α : Type*} {h : Filter α}
 -- Quantile threshold
 -- ============================================================
 
-/-- Continuity from above at a quantile threshold.
+/-- Continuity from above for the strict level sets at decreasing thresholds:
+`ν {f < c + 1/(n+1)} → ν {f ≤ c}` as `n → ∞`, for `c ≠ ∞`. -/
+lemma tendsto_measure_lt_add_one_div_nat {Ω : Type*} [MeasurableSpace Ω]
+    (ν : Measure Ω) [IsFiniteMeasure ν] (f : Ω → ℝ≥0∞) (c : ℝ≥0∞)
+    (hf : Measurable f) (hc : c ≠ ∞) :
+    Tendsto (fun n : ℕ => ν {x | f x < c + 1 / (n + 1 : ℝ≥0∞)}) atTop
+      (𝓝 (ν {x | f x ≤ c})) := by
+  have hA_anti : Antitone fun n : ℕ => {x | f x < c + 1 / (n + 1 : ℝ≥0∞)} :=
+    fun m n hmn x (hx : f x < _) => hx.trans_le (by gcongr)
+  have hinter : (⋂ n : ℕ, {x | f x < c + 1 / (n + 1 : ℝ≥0∞)}) = {x | f x ≤ c} := by
+    ext x
+    simp only [mem_iInter, mem_ofPred_eq]
+    exact ⟨fun hx => le_of_le_add_one_div fun n => (hx n).le,
+      fun hx n => hx.trans_lt (ENNReal.lt_add_right hc (by simp))⟩
+  rw [← hinter]
+  exact tendsto_measure_iInter_atTop
+    (fun n => (measurableSet_lt hf measurable_const).nullMeasurableSet) hA_anti
+    ⟨0, measure_ne_top ν _⟩
 
-If `η < ν {f < c + 1/(n+1)}` for every `n`, then `η ≤ ν {f ≤ c}`. -/
-lemma le_measure_of_lt_thresholds {Ω : Type*} [MeasurableSpace Ω]
-    (ν : Measure Ω) [IsFiniteMeasure ν] (f : Ω → ℝ≥0∞) (η c : ℝ≥0∞)
-    (hf : Measurable f)
-    (h : ∀ n : ℕ, η < ν {x | f x < c + 1 / (n + 1 : ℝ≥0∞)}) :
-    η ≤ ν {x | f x ≤ c} := by
-  -- the decreasing sequence of level sets `A n = {f ≤ c + 1/(n+1)}`
-  let A : ℕ → Set Ω := fun n => {x | f x ≤ c + 1 / (n + 1 : ℝ≥0∞)}
-  have hA_anti : Antitone A := fun m n hmn x (hx : f x ≤ _) => hx.trans (by gcongr)
-  -- continuity from above: `ν (⋂ n, A n) = ⨅ n, ν (A n)`
-  have hlim : ν (⋂ n, A n) = ⨅ n, ν (A n) :=
-    hA_anti.measure_iInter (fun n => (measurableSet_le hf measurable_const).nullMeasurableSet)
-      ⟨0, measure_ne_top ν _⟩
-  -- `⋂ n, A n ⊆ {f ≤ c}`
-  have hsubset : (⋂ n, A n) ⊆ {x | f x ≤ c} := fun x hx =>
-    le_of_le_add_one_div (Set.mem_iInter.1 hx)
-  calc η ≤ ν (⋂ n, A n) :=
-        hlim ▸ le_iInf fun n => (h n).le.trans (measure_mono fun x (hx : f x < _) => hx.le)
-    _ ≤ ν {x | f x ≤ c} := measure_mono hsubset
+/-- Selection of thresholds `e a → 0` "at a sufficiently slow rate".
 
-/-- The lower quantile `sInf {ε | η < ν {f < ε}}` is attained:
-`η ≤ ν {f ≤ sInf {ε | η < ν {f < ε}}}`, as soon as the defining set is nonempty. -/
-lemma le_measure_sInf {Ω : Type*} [MeasurableSpace Ω]
-    (ν : Measure Ω) [IsFiniteMeasure ν] (f : Ω → ℝ≥0∞) (η : ℝ≥0∞)
-    (hf : Measurable f) (hne : ∃ ε, η < ν {x | f x < ε}) :
-    η ≤ ν {x | f x ≤ sInf {ε | η < ν {x | f x < ε}}} := by
-  set c := sInf {ε | η < ν {x | f x < ε}}
-  obtain ⟨ε₀, hε₀⟩ := hne
-  by_cases hc : c = ∞
-  · -- the defining set is nonempty, so `η < ν {f < ε₀} ≤ ν {f ≤ ∞}`
-    simpa [hc] using hε₀.le.trans (measure_mono (subset_univ _))
-  refine le_measure_of_lt_thresholds ν f η c hf fun n => ?_
-  obtain ⟨ε, hεη, hεlt⟩ := sInf_lt_iff.1 (ENNReal.lt_add_right hc (by simp) :
-    c < c + 1 / (n + 1 : ℝ≥0∞))
-  exact hεη.trans_le (measure_mono fun x (hx : f x < ε) => hx.trans hεlt)
+Suppose that for every fixed `ε > 0` and every `η < b`, eventually `η < ν a {f a < ε}`, i.e.
+`b ≤ liminf ν a {f a < ε}` for every `ε > 0`. Then there are thresholds `e a` with `e a → 0`
+such that `b ≤ ν a {f a ≤ e a} + e a` for every `a`; in particular
+`b ≤ liminf ν a {f a ≤ e a}`.
+
+The thresholds are the quantiles `e a = sInf {ε | b < ν a {f a < ε} + ε}`. -/
+lemma exists_tendsto_zero_le_measure_le_add {α : Type*} {Ω : α → Type*}
+    [∀ a, MeasurableSpace (Ω a)] {h : Filter α} (ν : ∀ a, Measure (Ω a))
+    [∀ a, IsFiniteMeasure (ν a)] (f : ∀ a, Ω a → ℝ≥0∞) (hf : ∀ a, Measurable (f a))
+    (b : ℝ≥0∞) (hb : b ≠ ∞)
+    (hB : ∀ ε : ℝ≥0∞, 0 < ε → ∀ η < b, ∀ᶠ a in h, η < ν a {x | f a x < ε}) :
+    ∃ e : α → ℝ≥0∞, Tendsto e h (𝓝 0) ∧
+      ∀ a, b ≤ ν a {x | f a x ≤ e a} + e a := by
+  refine ⟨fun a => sInf {ε | b < ν a {x | f a x < ε} + ε}, ?_, fun a => ?_⟩
+  · rw [ENNReal.tendsto_nhds_zero]
+    intro ε hε
+    rcases eq_or_ne b 0 with rfl | hb0
+    · exact Eventually.of_forall fun a => sInf_le (hε.trans_le le_add_self)
+    filter_upwards [hB ε hε (b - ε) (ENNReal.sub_lt_self hb hb0 hε.ne')] with a ha
+    exact sInf_le (ENNReal.lt_add_of_sub_lt_right (Or.inl hb) ha)
+  · set c := sInf {ε | b < ν a {x | f a x < ε} + ε}
+    change b ≤ ν a {x | f a x ≤ c} + c
+    rcases eq_or_ne c ∞ with hc | hc
+    · rw [hc, add_top]
+      exact le_top
+    have hc_inv :
+        Tendsto (fun n : ℕ => c + ((n + 1 : ℕ) : ℝ≥0∞)⁻¹) atTop (𝓝 (c + 0)) :=
+      tendsto_const_nhds.add <|
+        (tendsto_add_atTop_iff_nat 1).2 ENNReal.tendsto_inv_nat_nhds_zero
+    have hlim := (tendsto_measure_lt_add_one_div_nat (ν a) (f a) c (hf a) hc).add hc_inv
+    rw [add_zero] at hlim
+    refine ge_of_tendsto' hlim fun n => ?_
+    obtain ⟨ε, hεb, hεlt⟩ := sInf_lt_iff.1 (ENNReal.lt_add_right hc (by simp) :
+      c < c + 1 / (n + 1 : ℝ≥0∞))
+    refine hεb.le.trans (add_le_add (measure_mono fun x (hx : f a x < ε) => ?_) ?_)
+    · exact hx.trans (by simpa using hεlt)
+    · simpa using hεlt.le
 
 -- ============================================================
 -- Le Cam's first lemma
 -- ============================================================
 
-/-- `Contiguous1 → Contiguous2` (Le Cam's first lemma, contrapositive form). -/
+/-- `Contiguous1 → Contiguous2` (Le Cam's first lemma), direct proof following
+van der Vaart, *Asymptotic Statistics*, Lemma 6.4, (i) ⇒ (ii). -/
 theorem Contiguous1.contiguous2 {α : Type*} {Ω : α → Type*}
-    [∀ a, MeasurableSpace (Ω a)] {l : Filter α}
+    [∀ a, MeasurableSpace (Ω a)] (l : Filter α)
     (P Q : ∀ a, ProbabilityMeasure (Ω a)) (hPQ : Contiguous1 l P Q) :
     Contiguous2 l P Q := by
   intro L h hle hne htend
-  by_contra hL0
-  -- η : ℝ≥0 with 0 < η < L {0}
-  obtain ⟨η, hη0, hηL⟩ := exists_between (pos_iff_ne_zero.mpr hL0)
-  -- Write `f a = dP a / dQ a`.
-  set f : ∀ a, Ω a → ℝ≥0∞ := fun a => (P a : Measure (Ω a)).rnDeriv (Q a : Measure (Ω a))
-  -- Lower bound transported to the `Q`-side: for every `ε > 0`, eventually `η < Q {f < ε}`.
-  have hB : ∀ ε : ℝ≥0∞, 0 < ε → ∀ᶠ a in h,
-      (η : ℝ≥0∞) < (Q a : Measure (Ω a)) {x | f a x < ε} := by
-    intro ε hε
-    filter_upwards [eventually_gt_measure_Iio_of_tendsto L _ htend (η : ℝ≥0∞)
-      (ENNReal.coe_lt_coe.mpr hηL) ε hε] with a ha
+  set f : ∀ a, Ω a → ℝ≥0∞ :=
+    fun a => (P a : Measure (Ω a)).rnDeriv (Q a : Measure (Ω a))
+  have hB : ∀ ε : ℝ≥0∞, 0 < ε → ∀ η < (L {0} : ℝ≥0∞), ∀ᶠ a in h,
+      η < (Q a : Measure (Ω a)) {x | f a x < ε} := by
+    intro ε hε η hη
+    filter_upwards [eventually_gt_measure_Iio_of_tendsto L _ htend η hη ε hε] with a ha
     rwa [pushforward_rnDeriv_apply_Iio, ennreal_coeFn_eq_coeFn_toMeasure] at ha
-  -- Quantile `c a` of the likelihood ratio at level `η`
-  let c : α → ℝ≥0∞ := fun a => sInf {ε | (η : ℝ≥0∞) < (Q a : Measure (Ω a)) {x | f a x < ε}}
-  -- `c a → 0` along `h`
-  have hc_tend : Tendsto c h (𝓝 0) := by
-    rw [ENNReal.tendsto_nhds_zero]
-    intro ε hε
-    filter_upwards [hB ε hε] with a ha
-    exact sInf_le ha
-  -- Continuity from above: `η ≤ Q a {f a ≤ c a}`, eventually
-  have hD : ∀ᶠ a in h, (η : ℝ≥0∞) ≤ (Q a : Measure (Ω a)) {x | f a x ≤ c a} := by
-    filter_upwards [hB 1 one_pos] with a ha1
-    exact le_measure_sInf (Q a : Measure (Ω a)) (f a) (η : ℝ≥0∞)
-      (Measure.measurable_rnDeriv _ _) ⟨1, ha1⟩
-  -- Neyman–Pearson sets `s a`: `P a (s a) ≤ c a` and `Q a (s a) = Q a {f a ≤ c a}`
+  obtain ⟨e, he, hLe⟩ :=
+    exists_tendsto_zero_le_measure_le_add (fun a => (Q a : Measure (Ω a))) f
+      (fun a => Measure.measurable_rnDeriv _ _) _ ENNReal.coe_ne_top hB
   choose s hs_meas hs_P hs_Q using fun a =>
-    exists_neymanPearson_set (P a : Measure (Ω a)) (Q a) (c a)
-  -- `c a → 0` ⇒ `P a (s a) → 0` (in `ℝ≥0`)
+    exists_neymanPearson_set (P a : Measure (Ω a)) (Q a) (e a)
   have hP_tend : Tendsto (fun a => (P a) (s a)) h (𝓝 0) := by
     rw [← ENNReal.tendsto_coe, ENNReal.coe_zero]
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hc_tend
-      (Eventually.of_forall (fun _ => (bot_le : (0 : ℝ≥0∞) ≤ _))) ?_
-    exact Eventually.of_forall fun a => by
-      rw [ennreal_coeFn_eq_coeFn_toMeasure]
-      exact hs_P a
-  -- `Contiguous1` (with the same `h ≤ l`) gives `Q a (s a) → 0` ...
-  have hQ_tend := hPQ (s := s) (h := h) hs_meas hle hP_tend
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds he
+      (fun a => (bot_le : (0 : ℝ≥0∞) ≤ _)) fun a => ?_
+    rw [ennreal_coeFn_eq_coeFn_toMeasure]
+    exact hs_P a
+  have hQ_tend := hPQ hs_meas hle hP_tend
   rw [← ENNReal.tendsto_coe, ENNReal.coe_zero] at hQ_tend
-  -- ... but `Q a (s a) ≥ η > 0` eventually, which is incompatible with convergence to `0`.
-  obtain ⟨a, ha_lt, ha_le⟩ :=
-    ((hQ_tend.eventually (Iio_mem_nhds (ENNReal.coe_pos.mpr hη0))).and hD).exists
-  rw [ennreal_coeFn_eq_coeFn_toMeasure, hs_Q] at ha_lt
-  exact ha_le.not_gt ha_lt
+  simp only [ennreal_coeFn_eq_coeFn_toMeasure, hs_Q] at hQ_tend
+  have hL : (L {0} : ℝ≥0∞) ≤ 0 := by
+    simpa using ge_of_tendsto' (hQ_tend.add he) hLe
+  exact_mod_cast nonpos_iff_eq_zero.mp hL
 
 end Statlib.Contiguity
